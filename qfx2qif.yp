@@ -1,0 +1,138 @@
+%{
+#
+# QFX2QIF - converts qfx files to qif files
+#
+# Copyright © 2018 Stefanos Manganaris
+#
+# This software comes with absolutly NO WARRANTY of any kind.
+#
+# Usage: yapp -v qfx2qif.yp   # to generate the qfx2qif.pm parser module
+#
+# See also: qfx2qif.pl
+#
+%}
+
+%{
+my %trans;
+my $acct;
+%}
+
+%%
+QFXfile:	OFXsection
+	|	Header OFXsection
+	;
+
+Header:		KeyValue
+	|	Header KeyValue
+	;
+
+KeyValue:	Key ':' Value
+	;
+
+Key:		identifier
+	;
+
+Value:		identifier
+	|	integer
+	;
+
+OFXsection:	OFXstag
+		SIGNONMSGSRSV1
+		INVSTMTMSGSRSV1
+		SECLISTMSGSRSV1
+		OFXetag
+		;
+
+INVSTMTMSGSRSV1:	INVSTMTMSGSRSV1stag
+			INVSTMTTRNRSlist
+			INVSTMTMSGSRSV1etag
+			;
+
+INVSTMTTRNRSlist:	INVSTMTTRNRS
+		|	INVSTMTTRNRSlist INVSTMTTRNRS
+		;
+
+INVSTMTTRNRS:	INVSTMTTRNRSstag
+		TRNUIDSTATUS
+		INVSTMTRSstag
+		DTASOFCURDEF
+		INVACCTFROM	{ $acct = $_[5] }
+		INVTRANLIST
+		INVPOSLIST
+		INVBAL
+		INVSTMTRSetag
+		INVSTMTTRNRSetag
+		;
+
+INVTRANLIST:	# empty
+	|	INVTRANLISTstag
+		DTSTARTEND
+		INVTLIST
+		INVTRANLISTetag
+	;
+
+INVTLIST:	INVTRAN
+	|	INVTLIST INVTRAN
+	;
+
+INVTRAN:	BUYOTHERstag	{ %trans = initTrans(); $trans{"type"} = "Buy"  }
+		INVTRANstag
+		FITID
+		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
+		DTSETTLE
+		MEMO		{ $trans{"memo"} = $_[8] }
+		INVTRANetag
+		SECID		{ $trans{"security"} = $main::semap{$_[11]} }
+		UNITS		{ $trans{"qty"} = $_[13] }
+		UNITPRICE	{ $trans{"price"} = $_[15] }
+		TOTAL		{ $trans{"totalamt"} = (-1)*$_[17]; $trans{"invstamt"} = (-1)*$_[17] }
+		SUBACCTSEC
+		BUYOTHERetag	{ printTrans() }
+	|	SELLOTHERstag	{ %trans = initTrans(); $trans{"type"} = "ShrsOut"  }
+		INVTRANstag
+		FITID
+		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
+		DTSETTLE
+		MEMO		{ $trans{"memo"} = $_[8] }
+		INVTRANetag
+		SECID		{ $trans{"security"} = $main::semap{$_[11]} }
+		UNITS		{ $trans{"qty"} = (-1)*$_[13] }
+		UNITPRICE	{ $trans{"price"} = $_[15] }
+		TOTAL		{ $trans{"totalamt"} = $_[17]; $trans{"invstamt"} = $_[17] }
+		SUBACCTSEC
+		SELLOTHERetag	{ printTrans() }
+	;
+
+%%
+
+sub initTrans {
+    return({date => "",
+	    type => "",
+	    security => "",
+	    price => "",
+	    qty => "",
+	    invstamt => "",
+	    totalamt => "",
+	    memo => ""
+	   });
+}
+
+sub printTrans {
+    return unless $acct =~ /$main::acctregexp/;
+
+    print main::QIF "D$trans{'date'}\n";
+    print main::QIF "N$trans{'type'}\n";
+    print main::QIF "Y$trans{'security'}\n";
+    print main::QIF "I$trans{'price'}\n";
+    print main::QIF "Q$trans{'qty'}\n";
+    print main::QIF "U$trans{'invstamt'}\n";
+    print main::QIF "T$trans{'totalamt'}\n";
+    print main::QIF "M$trans{'memo'}\n";
+    print main::QIF "^\n";
+}
+
+sub formatDate {
+    local $_=shift;
+    my ($yyyy, $mm, $dd) = /^(20\d\d)(\d\d)(\d\d).*$/;
+    return("$mm/$dd/$yyyy");
+}
