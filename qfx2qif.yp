@@ -75,17 +75,23 @@ INVTLIST:	INVTRAN
 	|	INVTLIST INVTRAN
 	;
 
-INVTRAN:	BUYOTHERstag	{ %trans = initTrans(); $trans{"type"} = "Buy"  }
+INVTRAN:	BUYTRAN
+	|	REINVEST
+	|	INCOME
+	|	BANKTRAN
+	;
+
+BUYTRAN:	BUYOTHERstag	{ %trans = initTrans(); $trans{"type"} = "Buy"  }
 		INVTRANstag
 		FITID
 		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
 		DTSETTLE
-		MEMO		{ $trans{"memo"} = $_[8] }
+		MEMOOPT
 		INVTRANetag
-		SECID		{ $trans{"security"} = $main::semap{$_[11]} }
-		UNITS		{ $trans{"qty"} = $_[13] }
-		UNITPRICE	{ $trans{"price"} = $_[15] }
-		TOTAL		{ $trans{"totalamt"} = (-1)*$_[17]; $trans{"invstamt"} = (-1)*$_[17] }
+		SECID		{ $trans{"security"} = $main::semap{$_[10]} }
+		UNITS		{ $trans{"qty"} = $_[12] }
+		UNITPRICE	{ $trans{"price"} = $_[14] }
+		TOTAL		{ $trans{"totalamt"} = (-1)*$_[16]; $trans{"invstamt"} = (-1)*$_[16] }
 		SUBACCTSEC
 		BUYOTHERetag	{ printTrans() }
 	|	SELLOTHERstag	{ %trans = initTrans(); $trans{"type"} = "ShrsOut"  }
@@ -103,6 +109,51 @@ INVTRAN:	BUYOTHERstag	{ %trans = initTrans(); $trans{"type"} = "Buy"  }
 		SELLOTHERetag	{ printTrans() }
 	;
 
+REINVEST:	REINVESTstag	{ %trans = initTrans(); $trans{"type"} = "Reinv"  }
+		INVTRANstag
+		FITID
+		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
+		DTSETTLE
+		MEMOOPT
+		INVTRANetag
+		SECID		{ $trans{"security"} = $main::semap{$_[10]} }
+		INCOMETYPE	{ $trans{"type"} .= mapIType($_[12]) }
+		TOTAL		{ $trans{"totalamt"} = (-1)*$_[14]; $trans{"invstamt"} = (-1)*$_[14] }
+		SUBACCTSEC
+		UNITS		{ $trans{"qty"} = $_[17] }
+		UNITPRICE	{ $trans{"price"} = $_[19] }
+		REINVESTetag	{ printTrans() }
+	;
+
+INCOME:		INCOMEstag	{ %trans = initTrans() }
+		INVTRANstag
+		FITID
+		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
+		DTSETTLE
+		MEMOOPT
+		INVTRANetag
+		SECID		{ $trans{"security"} = $main::semap{$_[10]} }
+		INCOMETYPE	{ $trans{"type"} = mapIType($_[12]) }
+		TOTAL		{ $trans{"totalamt"} = $_[14]; $trans{"invstamt"} = $_[14] }
+		SUBACCTSEC
+		INCOMEetag	{ printTrans() }
+	;
+
+MEMOOPT:	#empty
+    	|	MEMO		{ $trans{"memo"} = $_[1] }
+    	;
+
+BANKTRAN:	INVBANKTRANstag	{ %trans = initTrans() }
+		STMTTRNstag
+		TRNTYPE		{ $trans{"type"} = mapTType($_[4]) }
+		DTPOSTED	{ $trans{"date"} = formatDate($_[6]) }
+		TRNAMT		{ $trans{"trnamt"} = $_[8] }
+		FITID
+		STMTTRNetag
+		SUBACCTSEC
+		INVBANKTRANetag	{ printTrans() }
+	;
+
 %%
 
 sub initTrans {
@@ -113,22 +164,78 @@ sub initTrans {
 	    qty => "",
 	    invstamt => "",
 	    totalamt => "",
+	    trnamt => "",
 	    memo => ""
 	   });
+}
+
+sub mapTType {
+    local $_=shift;
+    my $type;
+
+  SWITCH: {
+      if (/^OTHER/) { $type="XIn"; last SWITCH; }
+      $type="";
+    }
+    return($type);
+}
+
+sub mapIType {
+    local $_=shift;
+    my $type;
+
+  SWITCH: {
+      if (/^DIV/) { $type="Div"; last SWITCH; }
+      $type="";
+    }
+    return($type);
 }
 
 sub printTrans {
     return unless $acct =~ /$main::acctregexp/;
 
-    print main::QIF "D$trans{'date'}\n";
-    print main::QIF "N$trans{'type'}\n";
-    print main::QIF "Y$trans{'security'}\n";
-    print main::QIF "I$trans{'price'}\n";
-    print main::QIF "Q$trans{'qty'}\n";
-    print main::QIF "U$trans{'invstamt'}\n";
-    print main::QIF "T$trans{'totalamt'}\n";
-    print main::QIF "M$trans{'memo'}\n";
-    print main::QIF "^\n";
+    if ($trans{'memo'} =~ /^DIVIDEND REINVESTMENTDIVIDEND REINVESTMENT/) { $trans{'memo'}=""; }
+
+  SWITCH: {
+      if ($trans{'type'} =~ /^XIn/) {
+
+	  last SWITCH;					# don't export
+
+	  print main::QIF "D$trans{'date'}\n";
+	  print main::QIF "N$trans{'type'}\n";
+	  print main::QIF "U$trans{'trnamt'}\n";
+	  print main::QIF "T$trans{'trnamt'}\n";
+	  print main::QIF "L\n";			# account
+	  print main::QIF "M$trans{'memo'}\n";
+	  print main::QIF "^\n";
+
+	  last SWITCH;
+      }
+      if ($trans{'type'} =~ /^Div/) {
+
+	  print main::QIF "D$trans{'date'}\n";
+	  print main::QIF "N$trans{'type'}\n";
+	  print main::QIF "Y$trans{'security'}\n";
+	  print main::QIF "U$trans{'invstamt'}\n";
+	  print main::QIF "T$trans{'totalamt'}\n";
+	 #print main::QIF "M$trans{'memo'}\n";
+	  print main::QIF "^\n";
+
+	  last SWITCH;
+      }
+
+      # otherwise #
+
+      print main::QIF "D$trans{'date'}\n";
+      print main::QIF "N$trans{'type'}\n";
+      print main::QIF "Y$trans{'security'}\n";
+      print main::QIF "I$trans{'price'}\n";
+      print main::QIF "Q$trans{'qty'}\n";
+      print main::QIF "U$trans{'invstamt'}\n";
+      print main::QIF "T$trans{'totalamt'}\n";
+      print main::QIF "M$trans{'memo'}\n";
+      print main::QIF "^\n";
+    }
 }
 
 sub formatDate {

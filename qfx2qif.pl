@@ -52,19 +52,26 @@ sub yylex {
 	s!^<SECLISTMSGSRSV1>.*</SECLISTMSGSRSV1>!! and return ("SECLISTMSGSRSV1", "");
 	s!^<TRNUID>.*?</STATUS>!! and return ("TRNUIDSTATUS", "");
 	s!^<DTASOF>.*?<CURDEF>USD!! and return ("DTASOFCURDEF", "");
-	s!^<INVACCTFROM>.*?<ACCTID>(\w+)\s.*?</INVACCTFROM>!! and return ("INVACCTFROM", $1);
+	s!^<INVACCTFROM>.*?<ACCTID>(\w+)\s?.*?</INVACCTFROM>!! and return ("INVACCTFROM", $1);
 	s!^<DTSTART>[^<>]*<DTEND>[^<>]*<!<! and return ("DTSTARTEND", "");
 	s!^<INVPOSLIST>.*?</INVPOSLIST>!! and return ("INVPOSLIST", "");
 	s!^<INVBAL>.*?</INVBAL>!! and return ("INVBAL", "");
-	s!^<FITID>\w*<!<! and return ("FITID", "");
+	s!^<FITID>[\w\.]*<!<! and return ("FITID", "");
 	s!^<DTTRADE>([\w.:\-\[\]]*)<!<! and return ("DTTRADE", "$1");
 	s!^<DTSETTLE>([\w.:\-\[\]]*)<!<! and return ("DTSETTLE", "$1");
+	s!^<DTPOSTED>([\w.:\-\[\]]*)<!<! and return ("DTPOSTED", "$1");
 	s!^<MEMO>([\w\s\-]*)<!<! and return ("MEMO", "$1");
 	s!^<SECID><UNIQUEID>([^<>]*)<UNIQUEIDTYPE>CUSIP</SECID>!! and return ("SECID", $1);
 	s!^<UNITS>([\d\-.]*)<!<! and return ("UNITS", "$1");
 	s!^<UNITPRICE>([\d\-.]*)<!<! and return ("UNITPRICE", "$1");
 	s!^<TOTAL>([\d\-.]*)<!<! and return ("TOTAL", "$1");
+	s!^<TRNAMT>([\d\-.]*)<!<! and return ("TRNAMT", "$1");
+	s!^<TRNTYPE>(\w*)<!<! and return ("TRNTYPE", $1);
 	s!^<SUBACCTSEC>CASH<SUBACCTFUND>CASH!! and return ("SUBACCTSEC", "");
+	s!^<SUBACCTSEC>CASH<SUBACCTFUND>OTHER!! and return ("SUBACCTSEC", "");
+	s!^<SUBACCTSEC>CASH!! and return ("SUBACCTSEC", "");
+	s!^<SUBACCTFUND>CASH!! and return ("SUBACCTSEC", "");
+	s!^<INCOMETYPE>(\w*)<!<! and return ("INCOMETYPE", $1);
 	# tags
 	s!^<OFX>!!  and return ("OFXstag", "");
 	s!^</OFX>!! and return ("OFXetag", "");
@@ -78,10 +85,24 @@ sub yylex {
 	s!^</INVTRANLIST>!! and return ("INVTRANLISTetag", "");
 	s!^<BUYOTHER><INVBUY>!!   and return ("BUYOTHERstag", "");
 	s!^</INVBUY></BUYOTHER>!! and return ("BUYOTHERetag", "");
+	s!^<BUYMF><INVBUY>!!   and return ("BUYOTHERstag", "");
+	s!^</INVBUY></BUYMF>!! and return ("BUYOTHERetag", "");
+	s!^</INVBUY><BUYTYPE>BUY</BUYMF>!! and return ("BUYOTHERetag", "");
 	s!^<SELLOTHER><INVSELL>!!   and return ("SELLOTHERstag", "");
 	s!^</INVSELL></SELLOTHER>!! and return ("SELLOTHERetag", "");
+	s!^<SELLMF><INVSELL>!!   and return ("SELLOTHERstag", "");
+	s!^</INVSELL></SELLMF>!! and return ("SELLOTHERetag", "");
+	s!^</INVSELL><SELLTYPE>SELL</SELLMF>!! and return ("SELLOTHERetag", "");
 	s!^<INVTRAN>!!  and return ("INVTRANstag", "");
 	s!^</INVTRAN>!! and return ("INVTRANetag", "");
+	s!^<REINVEST>!!  and return ("REINVESTstag", "");
+	s!^</REINVEST>!! and return ("REINVESTetag", "");
+	s!^<INCOME>!!  and return ("INCOMEstag", "");
+	s!^</INCOME>!! and return ("INCOMEetag", "");
+	s!^<INVBANKTRAN>!!  and return ("INVBANKTRANstag", "");
+	s!^</INVBANKTRAN>!! and return ("INVBANKTRANetag", "");
+	s!^<STMTTRN>!!  and return ("STMTTRNstag", "");
+	s!^</STMTTRN>!! and return ("STMTTRNetag", "");
 	# otherwise
 	print STDERR "Unexpected symbols: '$_'\n" ;
     }

@@ -12,10 +12,11 @@ provide .qif files.
 This software comes with absolutly NO WARRANTY of any kind.
 
 This converter is known to work well with qfx files provided by
-TIAA-CREF, for certain types of investment accounts, and for certain
-types of investment transactions.  It is almost certain that it does NOT
-cover the full spectrum of institutions, accounts, and transactions.
-Contributions that enhance its functionality are welcome.
+TIAA-CREF and Vanguard, for certain types of investment accounts, and
+for certain types of investment transactions.  It is almost certain
+that it does NOT cover the full spectrum of institutions, accounts,
+and transactions.  Contributions that enhance its functionality are
+welcome.
 
 REQUIREMENTS
 
