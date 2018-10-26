@@ -99,14 +99,29 @@ BUYTRAN:	BUYOTHERstag	{ %trans = initTrans(); $trans{"type"} = "Buy"  }
 		FITID
 		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
 		DTSETTLE
-		MEMO		{ $trans{"memo"} = $_[8] }
+		MEMOOPT
 		INVTRANetag
-		SECID		{ $trans{"security"} = $main::semap{$_[11]} }
-		UNITS		{ $trans{"qty"} = (-1)*$_[13] }
-		UNITPRICE	{ $trans{"price"} = $_[15] }
-		TOTAL		{ $trans{"totalamt"} = $_[17]; $trans{"invstamt"} = $_[17] }
+		SECID		{ $trans{"security"} = $main::semap{$_[10]} }
+		UNITS		{ $trans{"qty"} = (-1)*$_[12] }
+		UNITPRICE	{ $trans{"price"} = $_[14] }
+		TOTAL		{ $trans{"totalamt"} = $_[16]; $trans{"invstamt"} = $_[16] }
 		SUBACCTSEC
 		SELLOTHERetag	{ printTrans() }
+	|	SELLSTOCKstag	{ %trans = initTrans(); $trans{"type"} = "Sell"  }
+		INVTRANstag
+		FITID
+		DTTRADE		{ $trans{"date"} = formatDate($_[5]) }
+		DTSETTLE
+		MEMOOPT
+		INVTRANetag
+		SECID		{ $trans{"security"} = $main::semap{$_[10]} }
+		UNITS		{ $trans{"qty"} = (-1)*$_[12] }
+		UNITPRICE	{ $trans{"price"} = $_[14] }
+		COMMISSION	{ $trans{"commission"} = $_[16] }
+		FEES		{ $trans{"fees"} = $_[18] }
+		TOTAL		{ $trans{"totalamt"} = $_[20]; $trans{"invstamt"} = $_[20] }
+		SUBACCTSEC
+		SELLSTOCKetag	{ printTrans() }
 	;
 
 REINVEST:	REINVESTstag	{ %trans = initTrans(); $trans{"type"} = "Reinv"  }
@@ -162,6 +177,8 @@ sub initTrans {
 	    security => "",
 	    price => "",
 	    qty => "",
+	    commission => "",
+	    fees => "",
 	    invstamt => "",
 	    totalamt => "",
 	    trnamt => "",
@@ -220,6 +237,23 @@ sub printTrans {
 	  print main::QIF "T$trans{'totalamt'}\n";
 	 #print main::QIF "M$trans{'memo'}\n";
 	  print main::QIF "^\n";
+
+	  last SWITCH;
+      }
+      if ($trans{'type'} =~ /^Sell/) {
+
+      	  my $fees = $trans{'commission'}+$trans{'fees'};
+
+          print main::QIF "D$trans{'date'}\n";
+	  print main::QIF "N$trans{'type'}\n";
+          print main::QIF "Y$trans{'security'}\n";
+          print main::QIF "I$trans{'price'}\n";
+          print main::QIF "Q$trans{'qty'}\n";
+          print main::QIF "O$fees\n";
+          print main::QIF "U$trans{'invstamt'}\n";
+          print main::QIF "T$trans{'totalamt'}\n";
+          print main::QIF "M$trans{'memo'}\n";
+          print main::QIF "^\n";
 
 	  last SWITCH;
       }

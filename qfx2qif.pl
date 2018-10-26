@@ -64,6 +64,8 @@ sub yylex {
 	s!^<SECID><UNIQUEID>([^<>]*)<UNIQUEIDTYPE>CUSIP</SECID>!! and return ("SECID", $1);
 	s!^<UNITS>([\d\-.]*)<!<! and return ("UNITS", "$1");
 	s!^<UNITPRICE>([\d\-.]*)<!<! and return ("UNITPRICE", "$1");
+	s!^<COMMISSION>([\d\-.]*)<!<! and return ("COMMISSION", "$1");
+	s!^<FEES>([\d\-.]*)<!<! and return ("FEES", "$1");
 	s!^<TOTAL>([\d\-.]*)<!<! and return ("TOTAL", "$1");
 	s!^<TRNAMT>([\d\-.]*)<!<! and return ("TRNAMT", "$1");
 	s!^<TRNTYPE>(\w*)<!<! and return ("TRNTYPE", $1);
@@ -93,6 +95,9 @@ sub yylex {
 	s!^<SELLMF><INVSELL>!!   and return ("SELLOTHERstag", "");
 	s!^</INVSELL></SELLMF>!! and return ("SELLOTHERetag", "");
 	s!^</INVSELL><SELLTYPE>SELL</SELLMF>!! and return ("SELLOTHERetag", "");
+	s!^<SELLSTOCK><INVSELL>!!   and return ("SELLSTOCKstag", "");
+	s!^</INVSELL></SELLSTOCK>!! and return ("SELLSTOCKetag", "");
+	s!^</INVSELL><SELLTYPE>SELL</SELLSTOCK>!! and return ("SELLSTOCKetag", "");
 	s!^<INVTRAN>!!  and return ("INVTRANstag", "");
 	s!^</INVTRAN>!! and return ("INVTRANetag", "");
 	s!^<REINVEST>!!  and return ("REINVESTstag", "");
