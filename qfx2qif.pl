@@ -74,6 +74,8 @@ sub yylex {
 	s!^<SUBACCTSEC>CASH!! and return ("SUBACCTSEC", "");
 	s!^<SUBACCTFUND>CASH!! and return ("SUBACCTSEC", "");
 	s!^<INCOMETYPE>(\w*)<!<! and return ("INCOMETYPE", $1);
+	s!^<TFERACTION>(\w*)<!<! and return ("TFERACTION", $1);
+	s!^<POSTYPE>LONG!! and return ("POSTYPE", "");
 	# tags
 	s!^<OFX>!!  and return ("OFXstag", "");
 	s!^</OFX>!! and return ("OFXetag", "");
@@ -102,6 +104,8 @@ sub yylex {
 	s!^</INVTRAN>!! and return ("INVTRANetag", "");
 	s!^<REINVEST>!!  and return ("REINVESTstag", "");
 	s!^</REINVEST>!! and return ("REINVESTetag", "");
+	s!^<TRANSFER>!!  and return ("TRANSFERstag", "");
+	s!^</TRANSFER>!! and return ("TRANSFERetag", "");
 	s!^<INCOME>!!  and return ("INCOMEstag", "");
 	s!^</INCOME>!! and return ("INCOMEetag", "");
 	s!^<INVBANKTRAN>!!  and return ("INVBANKTRANstag", "");
