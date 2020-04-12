@@ -56,6 +56,7 @@ sub yylex {
 	s!^<DTSTART>[^<>]*<DTEND>[^<>]*<!<! and return ("DTSTARTEND", "");
 	s!^<INVPOSLIST>.*?</INVPOSLIST>!! and return ("INVPOSLIST", "");
 	s!^<INVBAL>.*?</INVBAL>!! and return ("INVBAL", "");
+	s!^<INV401K>.*</INV401K><INV401KBAL>.*?</INV401KBAL>!! and return ("INVBAL", "");
 	s!^<FITID>[\w\.]*<!<! and return ("FITID", "");
 	s!^<DTTRADE>([\w.:\-\[\]]*)<!<! and return ("DTTRADE", "$1");
 	s!^<DTSETTLE>([\w.:\-\[\]]*)<!<! and return ("DTSETTLE", "$1");
@@ -89,9 +90,15 @@ sub yylex {
 	s!^</INVTRANLIST>!! and return ("INVTRANLISTetag", "");
 	s!^<BUYOTHER><INVBUY>!!   and return ("BUYOTHERstag", "");
 	s!^</INVBUY></BUYOTHER>!! and return ("BUYOTHERetag", "");
+	s!^<BUYSTOCK><INVBUY>!!   and return ("BUYOTHERstag", "");
+	s!^</INVBUY></BUYSTOCK>!! and return ("BUYOTHERetag", "");
+	s!^</INVBUY><BUYTYPE>BUY</BUYSTOCK>!! and return ("BUYOTHERetag", "");
 	s!^<BUYMF><INVBUY>!!   and return ("BUYOTHERstag", "");
 	s!^</INVBUY></BUYMF>!! and return ("BUYOTHERetag", "");
 	s!^</INVBUY><BUYTYPE>BUY</BUYMF>!! and return ("BUYOTHERetag", "");
+	s!^<INV401KSOURCE>OTHERVEST</INVBUY><BUYTYPE>BUY</BUYMF>!! and return ("BUYOTHERetag", "");
+	s!^<INV401KSOURCE>AFTERTAX</INVBUY><BUYTYPE>BUY</BUYMF>!! and return ("BUYOTHERetag", "");
+	s!^<INV401KSOURCE>OTHERNONVEST</INVBUY><BUYTYPE>BUY</BUYMF>!! and return ("BUYOTHERetag", "");
 	s!^<SELLOTHER><INVSELL>!!   and return ("SELLOTHERstag", "");
 	s!^</INVSELL></SELLOTHER>!! and return ("SELLOTHERetag", "");
 	s!^<SELLMF><INVSELL>!!   and return ("SELLOTHERstag", "");
@@ -106,6 +113,9 @@ sub yylex {
 	s!^</REINVEST>!! and return ("REINVESTetag", "");
 	s!^<TRANSFER>!!  and return ("TRANSFERstag", "");
 	s!^</TRANSFER>!! and return ("TRANSFERetag", "");
+	s!^<INV401KSOURCE>OTHERVEST</TRANSFER>!! and return ("TRANSFERetag", "");
+	s!^<INV401KSOURCE>AFTERTAX</TRANSFER>!! and return ("TRANSFERetag", "");
+	s!^<INV401KSOURCE>OTHERNONVEST</TRANSFER>!! and return ("TRANSFERetag", "");
 	s!^<INCOME>!!  and return ("INCOMEstag", "");
 	s!^</INCOME>!! and return ("INCOMEetag", "");
 	s!^<INVBANKTRAN>!!  and return ("INVBANKTRANstag", "");
