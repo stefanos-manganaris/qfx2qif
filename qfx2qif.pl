@@ -67,7 +67,7 @@ sub yylex {
 	s!^<UNITPRICE>([\d\-.]*)<!<! and return ("UNITPRICE", "$1");
 	s!^<COMMISSION>([\d\-.]*)<!<! and return ("COMMISSION", "$1");
 	s!^<FEES>([\d\-.]*)<!<! and return ("FEES", "$1");
-	s!^<TOTAL>([\d\-.]*)<!<! and return ("TOTAL", "$1");
+	s!^(<WITHHOLDING>[\d\-.]*)?<TOTAL>([\d\-.]*)<!<! and return ("TOTAL", "$2");
 	s!^<TRNAMT>([\d\-.]*)<!<! and return ("TRNAMT", "$1");
 	s!^<TRNTYPE>(\w*)<!<! and return ("TRNTYPE", $1);
 	s!^<SUBACCTSEC>CASH<SUBACCTFUND>CASH!! and return ("SUBACCTSEC", "");
